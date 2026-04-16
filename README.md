@@ -7,9 +7,13 @@
 
 ## Features
 - Quản lý sách
-- Quản lý user
-- Mượn/trả sách
+- Quản lý người dùng
+- Mượn / trả sách
 
-## Run
-1. Setup MySQL
-2. Run Main.java
+## Setup
+1. Cài MySQL
+2. Tạo database
+3. Chạy Main.java
+
+## Author
+- ThanhTD
