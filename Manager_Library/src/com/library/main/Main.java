@@ -99,7 +99,7 @@ public class Main {
                 String nAuthor = InputValidator.getString("New Author: ");
                 String nCat = InputValidator.getString("New Category ID: ");
                 int nQty = InputValidator.getInt("New Quantity: ");
-                bookService.updateBook(id, nName, nAuthor, nCat, nQty);
+                boolean result = bookService.updateBook(id, nName, nAuthor, nCat, nQty);
                 break;
             case 3:
                 String dId = InputValidator.getString("Book ID to delete: ");

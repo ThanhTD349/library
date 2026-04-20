@@ -15,9 +15,27 @@ public class UserService {
             addUser("Admin", "admin", "admin123", "ADMIN");
         }
     }
+    private String generateUserId() {
+        String sql = "SELECT id FROM users ORDER BY id DESC LIMIT 1";
 
+        try (Connection conn = DatabaseContext.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next()) {
+                String lastId = rs.getString("id"); // ví dụ U003
+                int num = Integer.parseInt(lastId.substring(1));
+                return "U" + String.format("%03d", num + 1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return "U001";
+    }
     public void addUser(String name, String studentCode, String password, String role) {
-        String id = UUID.randomUUID().toString().substring(0, 8);
+        String id = generateUserId();
         String sql = "INSERT INTO users (id, name, student_code, password, role, status) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -92,17 +110,24 @@ public class UserService {
             e.printStackTrace();
             return false;
         }
+
     }
 
     public boolean updateRole(String id, String role) {
-        String sql = "UPDATE users SET role = ? WHERE id = ?";
-        try (Connection conn = DatabaseContext.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, role.toUpperCase());
-            pstmt.setString(2, id);
-            return pstmt.executeUpdate() > 0;
+        String fixStatusSql = "UPDATE users SET status='ACTIVE' WHERE status='active'";
+        String updateRoleSql = "UPDATE users SET role=? WHERE id=?";
+        try (Connection conn = DatabaseContext.getConnection()) {
+            try (PreparedStatement ps1 = conn.prepareStatement(fixStatusSql)) {
+                ps1.executeUpdate();
+            }
+            try (PreparedStatement ps2 = conn.prepareStatement(updateRoleSql)) {
+                ps2.setString(1, role.toUpperCase());
+                ps2.setString(2, id);
+                return ps2.executeUpdate() > 0;
+            }
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Error: " + e.getMessage());
             return false;
         }
     }

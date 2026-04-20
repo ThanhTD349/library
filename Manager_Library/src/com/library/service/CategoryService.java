@@ -14,9 +14,8 @@ public class CategoryService {
     }
 
     public void addCategory(String name) {
-        String id = UUID.randomUUID().toString().substring(0, 8);
-        String sql = "INSERT INTO categories (id, name) VALUES (?, ?)";
-        try (Connection conn = DatabaseContext.getConnection();
+            String id = "C" + String.format("%02d", getAllCategories().size() + 1);        String sql = "INSERT INTO categories (id, name) VALUES (?, ?)";
+            try (Connection conn = DatabaseContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, id);
             pstmt.setString(2, name);

@@ -12,9 +12,36 @@ public class BookService {
     public BookService() {
         // No need to load from file
     }
+    private boolean bookExists(String id) {
+        String sql = "SELECT 1 FROM books WHERE id = ?";
 
+        try (Connection conn = DatabaseContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, id);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+    private boolean categoryExists(String id) {
+        String sql = "SELECT 1 FROM categories WHERE id = ?";
+
+        try (Connection conn = DatabaseContext.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, id);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+
+        } catch (SQLException e) {
+            return false;
+        }
+    }
     public void addBook(String name, String author, String categoryId, int quantity) {
-        String id = UUID.randomUUID().toString().substring(0, 8);
+        String id = "B" + String.format("%03d", getAllBooks().size() + 1);
         String sql = "INSERT INTO books (id, name, author, category_id, quantity) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -30,6 +57,20 @@ public class BookService {
     }
 
     public boolean updateBook(String id, String name, String author, String categoryId, int quantity) {
+        if (quantity < 0) {
+            System.out.println("Quantity must be >= 0");
+            return false;
+        }
+
+        if (!bookExists(id)) {
+            System.out.println("Book not found!");
+            return false;
+        }
+
+        if (!categoryExists(categoryId)) {
+            System.out.println("Category does not exist!");
+            return false;
+        }
         String sql = "UPDATE books SET name = ?, author = ?, category_id = ?, quantity = ? WHERE id = ?";
         try (Connection conn = DatabaseContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -38,7 +79,14 @@ public class BookService {
             pstmt.setString(3, categoryId);
             pstmt.setInt(4, quantity);
             pstmt.setString(5, id);
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Book updated successfully");
+                return true;
+            } else {
+                System.out.println("Update failed!");
+                return false;
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -46,13 +94,34 @@ public class BookService {
     }
 
     public boolean deleteBook(String id) {
+        if (id == null || id.trim().isEmpty()) {
+            System.out.println("Invalid ID!");
+            return false;
+        }
+
+        if (!bookExists(id)) {
+            System.out.println("Book not found!");
+            return false;
+        }
         String sql = "DELETE FROM books WHERE id = ?";
         try (Connection conn = DatabaseContext.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, id);
-            return pstmt.executeUpdate() > 0;
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Book deleted successfully");
+                return true;
+            } else {
+                System.out.println("Delete failed!");
+                return false;
+            }
+        } catch (SQLIntegrityConstraintViolationException e) {
+            System.out.println("Cannot delete book (it is being borrowed)");
+            return false;
+
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println("Database error: " + e.getMessage());
             return false;
         }
     }
